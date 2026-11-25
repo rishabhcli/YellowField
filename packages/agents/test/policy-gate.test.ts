@@ -28,7 +28,13 @@ import {
   defineTool,
   executeToolCall,
 } from '@foundry/agents';
-import { ALL_MANIFESTS, ProviderRegistry, type AnthropicAdapter, type BandAdapter } from '@foundry/providers';
+import {
+  ALL_MANIFESTS,
+  ProviderRegistry,
+  ZERO_HUMAN_CO_COORDINATION_ROOM_ID,
+  type AnthropicAdapter,
+  type BandAdapter,
+} from '@foundry/providers';
 import { z } from 'zod';
 
 const TEST_DB = `foundry_agents_${Date.now()}`;
@@ -511,6 +517,12 @@ describe('org dispatch chain of command', () => {
         companyId, fromRoleKey: 'community_researcher', toRoleKey: 'review_miner',
         objective: 'mine reviews', traceId: 't',
       }),
+    ).rejects.toThrow(PolicyDeniedError);
+    await expect(
+      dispatcher.dispatch({
+        companyId, fromRoleKey: 'community_researcher', toRoleKey: 'review_miner',
+        objective: 'mine reviews', traceId: 't',
+      }),
     ).rejects.toThrow(/do not delegate/);
   });
 
@@ -536,15 +548,15 @@ describe('org dispatch chain of command', () => {
     expect(tracked.calls, 'enqueue must not run without a BAND room').toHaveLength(0);
   });
 
-  maybe('enqueueSystem also refuses when BAND is not wired', async () => {
+  maybe('enqueueSystem may proceed DB-only when BAND is not wired (support inbound)', async () => {
     const tracked = trackingQueues();
     const dispatcher = new OrgDispatcher(repos, tracked.queues);
-    await expect(
-      dispatcher.enqueueSystem({
-        companyId, toRoleKey: 'ceo', objective: 'start the loop', traceId: 't',
-      }),
-    ).rejects.toThrow(/BAND/);
-    expect(tracked.calls).toHaveLength(0);
+    const result = await dispatcher.enqueueSystem({
+      companyId, toRoleKey: 'customer_ops_manager', objective: 'Handle inbound ticket tkt_1', traceId: 't',
+    });
+    expect(result.runId).toMatch(/^run_/);
+    expect(tracked.calls).toHaveLength(1);
+    expect(tracked.calls[0]?.[0]).toBe('agent.run');
   });
 
   maybe('removing the room (sendMessage fails) breaks dispatch and does not enqueue', async () => {
@@ -552,6 +564,7 @@ describe('org dispatch chain of command', () => {
     const objective = `band-room-gone-${Date.now()}`;
     const band = {
       getMe: async () => ({ id: 'agt_test', handle: 'foundry-dispatch' }),
+      resolveCoordinationRoom: async () => ({ chatId: 'chat_test', created: false }),
       createChat: async () => ({ id: 'chat_test' }),
       listParticipants: async () => [{ id: 'user_test', handle: 'room-owner' }],
       sendMessage: async () => {
@@ -576,6 +589,7 @@ describe('org dispatch chain of command', () => {
     let sent = 0;
     const band = {
       getMe: async () => ({ id: 'agt_test', handle: 'foundry-dispatch' }),
+      resolveCoordinationRoom: async () => ({ chatId: 'chat_test', created: false }),
       createChat: async () => ({ id: 'chat_test' }),
       listParticipants: async () => [{ id: 'agt_test', handle: 'foundry-dispatch' }],
       sendMessage: async () => {
@@ -600,6 +614,10 @@ describe('org dispatch chain of command', () => {
     let sent: { recipients: readonly string[]; body: string } | undefined;
     const band = {
       getMe: async () => ({ id: 'agt_test', handle: 'foundry-dispatch' }),
+      resolveCoordinationRoom: async () => {
+        events.push('resolveRoom');
+        return { chatId: 'chat_test', created: false };
+      },
       createChat: async () => {
         events.push('createChat');
         return { id: 'chat_test' };
@@ -618,12 +636,48 @@ describe('org dispatch chain of command', () => {
     });
     expect(sent?.recipients).toEqual(['room-owner']);
     expect(sent?.body).toContain('DISPATCH');
+    expect(sent?.body).toContain('CHANNEL=discovery');
     expect(events.indexOf('sendMessage')).toBeGreaterThanOrEqual(0);
     expect(events.indexOf('sendMessage')).toBeLessThan(events.indexOf('enqueue'));
+    expect(events.includes('createChat'), 'handoff must not open a decorative second room').toBe(false);
     const run = await repos.agents.runs.byId(result.runId);
     expect(run.coordination_room_id).toBe('chat_test');
     expect(run.input_refs['bandChatId']).toBe('chat_test');
     expect(run.input_refs['bandMessageId']).toBe('msg_test');
+    expect(run.input_refs['bandChannel']).toBe('discovery');
+  });
+
+  maybe('posts finance handoffs on the finance channel and writes an audit event', async () => {
+    let sent: { recipients: readonly string[]; body: string; chatId: string } | undefined;
+    const band = {
+      getMe: async () => ({ id: 'agt_test', handle: 'foundry-dispatch' }),
+      resolveCoordinationRoom: async () => ({
+        chatId: ZERO_HUMAN_CO_COORDINATION_ROOM_ID,
+        created: false,
+      }),
+      createChat: async () => {
+        throw new Error('must not create a second BAND room');
+      },
+      listParticipants: async () => [{ id: 'user_test', handle: 'room-owner' }],
+      sendMessage: async (chatId: string, input: { recipients: readonly string[]; body: string }) => {
+        sent = { ...input, chatId };
+        return { id: 'msg_finance' };
+      },
+    } as unknown as BandAdapter;
+    const dispatcher = new OrgDispatcher(repos, trackingQueues().queues, { band });
+    const result = await dispatcher.dispatch({
+      companyId, fromRoleKey: 'finance_manager', toRoleKey: 'margin_calculator',
+      objective: 'recompute contribution', traceId: 't',
+    });
+    expect(sent?.chatId).toBe(ZERO_HUMAN_CO_COORDINATION_ROOM_ID);
+    expect(sent?.body).toContain('CHANNEL=finance');
+    const events = await repos.audit.list(companyId, { subjectRefId: result.runId });
+    const handoff = events.find((e) => e.action === 'band.handoff');
+    expect(handoff, 'dispatch must write an auditable BAND handoff').toBeDefined();
+    expect(handoff?.kind).toBe('agent_decision');
+    expect(handoff?.outcome).toBe('success');
+    expect(handoff?.detail['channel']).toBe('finance');
+    expect(handoff?.detail['chatId']).toBe(ZERO_HUMAN_CO_COORDINATION_ROOM_ID);
   });
 });
 
@@ -669,6 +723,7 @@ describe('BAND handoff drives start', () => {
     const tracked = trackingQueues(events);
     const band = {
       getMe: async () => ({ id: 'agt_test', handle: 'foundry-dispatch' }),
+      resolveCoordinationRoom: async () => ({ chatId: 'chat_test', created: false }),
       createChat: async () => ({ id: 'chat_test' }),
       listParticipants: async () => [{ id: 'user_test', handle: 'room-owner' }],
       sendMessage: async () => {
@@ -756,7 +811,10 @@ function stubBand(): { band: BandAdapter } {
   return {
     band: {
       getMe: async () => ({ id: 'agt_test', handle: 'foundry-dispatch' }),
-      createChat: async () => ({ id: 'chat_test' }),
+      resolveCoordinationRoom: async () => ({ chatId: 'chat_test', created: false }),
+      createChat: async () => {
+        throw new Error('stubBand must reuse the company room, not createChat');
+      },
       listParticipants: async () => [{ id: 'user_test', handle: 'room-owner' }],
       sendMessage: async () => ({ id: 'msg_test' }),
       markMessageProcessing: async () => ({ id: 'msg_test' }),

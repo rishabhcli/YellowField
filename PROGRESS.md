@@ -9,6 +9,25 @@ Last updated: 2026-08-15. Production **NOT COMPLETE**. Company loop **not DONE**
 
 ---
 
+## BAND (this branch — not company-loop DONE)
+
+Coordination layer only. BAND is not a sandbox or model runtime. Probe
+`GET /agent/me` is not mesh-complete.
+
+| Item | Status | Evidence |
+|---|---|---|
+| Chain of command | **DONE** (unit) | Specialist `dispatch` → `PolicyDeniedError`. Non-direct-report denied. 78-role chart still holds no `HUMAN_ONLY_AUTHORITIES` (`packages/core/test/org.test.ts`, `packages/agents/test/policy-gate.test.ts`). |
+| Room post before enqueue | **DONE** (unit) | `@mention` is posted before `queues.enqueue`. Failed send does not enqueue. |
+| Executor missing assignment | **DONE** (unit) | Run without `bandChatId`/`bandMessageId` ends `failed`, not `running`. |
+| `dispatch` vs `enqueueSystem` | **DONE** (unit) | Unconfigured `dispatch` refuses. `enqueueSystem` (support inbound) may proceed DB-only. Runtime must pass `{ band }` only when `band.isConfigured` — see `PATCH.md`. |
+| Permissioned channels | **DONE** (unit) | Eight lanes (discovery, sourcing, marketing, support, engineering, finance, QA, incidents) are labels on the existing Zero Human Co room `a70129cc-0663-4090-86b5-c5a98025532e`, not extra chats. |
+| Auditable handoffs | **DONE** (unit) | Successful dispatch writes `audit_events.action = band.handoff`. |
+| Reaper | **DONE** (existing) | `reapOverdueRuns` still on the dispatcher; `loop.tick` / reconcile already call it. Not re-owned here. |
+| Human in the room | **NOT COMPLETE** | Dispatch still needs a mentionable participant who is not the sending agent. No live proof a human is in `a70129cc-…`. |
+| `coordination.governance` | **NOT COMPLETE** | Manifest evidence remains `marketing_claim_only`. |
+
+---
+
 ## Live company loop (not DONE)
 
 Company `co_01M03F7RQW2M6540BY2GZHCFBW` exists. Render Workflows `tickCompanyLoop` **COMPLETED** (`trn-0994gda0c8fvlk1mc73fl86u0`). The tick's action output was **blocked** on `research.web_search`; as of 2026-08-15 `BRAVE_SEARCH_API_KEY` is present, answers a direct live probe with **HTTP 200** and real results, and is set on `foundry-worker` / `foundry-api`. That is a credential fact, not a verified method — no `integration_verifications` row exists and the loop has still not completed a phase. **`ANTHROPIC_API_KEY` is absent and is now the only key gating the loop.**

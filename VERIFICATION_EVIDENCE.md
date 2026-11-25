@@ -26,7 +26,7 @@ Last updated: 2026-08-15. Secrets in this file: **none**.
 |---|---|
 | Stripe Payment Link | Live: `plink_1U4lK242nB81EBguRPuIHrxS` / `https://buy.stripe.com/bJe7sE7Ti3nmbLYdjb2go00`. Single customer-chooses-price path. Do not mint a second link. |
 | Stripe webhook ingest | `POST https://foundry-api-8ih0.onrender.com/webhooks/stripe` ingest **200**. Endpoint `we_1U4n7G42nB81EBguLAx6jzsB`. |
-| Band room | `a70129cc-0663-4090-86b5-c5a98025532e` (Zero Human Co coordination). Dispatch still requires this room. |
+| Band room | `a70129cc-0663-4090-86b5-c5a98025532e` (Zero Human Co coordination). Dispatch still requires this room. `GET /agent/me` is not mesh-complete. |
 | Render Workflows `tickCompanyLoop` | **COMPLETED** `trn-0994gda0c8fvlk1mc73fl86u0` for `co_01M03F7RQW2M6540BY2GZHCFBW`. Brave/`research.web_search` block is the tick's loop output, not a workflow failure. |
 | Linq link/open iMessage App | **HTTP 202** chat `de316f38-5ead-4ded-8ca9-27a5c4851987` message `b63a89a7-7204-47e3-bbe4-32acf278f3a9`. Stripe Payment Link as `params.url` (not `agentpay` `checkout_url`). |
 | Superserve pause | Pause **proven** — VM state preserved across pause/resume. Distinct from sandbox0. |
@@ -61,6 +61,26 @@ Last updated: 2026-08-15. Secrets in this file: **none**.
 | Key Value free | `red-da0b34flk1mc73fiunc0` | `maxmemoryPolicy: noeviction` |
 
 `.env` is gitignored. Do not commit it.
+
+---
+
+## BAND (unit evidence — not company-loop DONE)
+
+Executed 2026-08-15 against source (`vitest run` on this branch). Not a live prize-method expansion.
+
+| Check | Result |
+|---|---|
+| Specialist delegate | `PolicyDeniedError` / do not delegate |
+| Non-direct-report | `PolicyDeniedError` |
+| Unconfigured `dispatch` | refuses; enqueue count 0 |
+| Unconfigured `enqueueSystem` | DB-only enqueue proceeds (support inbound) |
+| Missing BAND assignment | executor row `failed`, not `running` |
+| Channel labels | eight PLAN §2 lanes; finance handoff posts `CHANNEL=finance` into `a70129cc-…` |
+| Audit | `audit_events.action = band.handoff` |
+| Room reuse | `resolveCoordinationRoom` does not `createChat` when the live room is listed |
+| Probe | `GET /agent/me` detail has no "mesh complete"; `coordination.governance` stays `marketing_claim_only` |
+
+Runtime `{ band }` wiring and bootstrap room pin are in `PATCH.md`, not applied on this branch.
 
 ---
 

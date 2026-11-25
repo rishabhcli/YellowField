@@ -42,6 +42,19 @@ Company `co_01M03F7RQW2M6540BY2GZHCFBW`: Workflows `tickCompanyLoop` **COMPLETED
 
 ---
 
+## BAND leftovers (not company-loop DONE)
+
+| Item | Status |
+|---|---|
+| Live room | **live** `a70129cc-0663-4090-86b5-c5a98025532e` (Zero Human Co). Do not create a second room and call channels done. |
+| Runtime `{ band }` wiring | **PATCH required** — `packages/runtime/src/context.ts` still passes a truthy unconfigured adapter into `OrgDispatcher`. Until `PATCH.md` is applied, `enqueueSystem` will try to post and throw instead of proceeding DB-only. |
+| Bootstrap `createChat` | **PATCH required** — `ensureBandCoordinationRoom` must call `resolveCoordinationRoom` / pin `a70129cc-…` instead of opening a decorative chat. |
+| Human in the room | **NOT COMPLETE** — `@mention` of another participant is mandatory; a room that contains only `foundry-dispatch` cannot hand off. No live human-participant proof. |
+| `GET /agent/me` | Identity probe only. Not mesh-complete. Not `coordination.governance`. |
+| Company loop | **not DONE** — BAND coordination does not unblock Brave / Anthropic. |
+
+---
+
 ## Dashboard leftover
 
 Copy gitignored `.env` names into Render env for `foundry-api` / `foundry-worker` when adding new secrets. `BRAVE_SEARCH_API_KEY` **is** present locally and has now been pushed to both services via the Render API. Reddit and **Anthropic** remain absent — Anthropic is the single key still gating the loop. Do not commit `.env` or `hackathon-sponsor-credentials.md`.
