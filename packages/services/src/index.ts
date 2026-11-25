@@ -13,6 +13,7 @@ export * from './commerce/webhook-processor.js';
 export * from './commerce/fulfilment.js';
 export * from './commerce/refunds.js';
 export * from './commerce/collect.js';
+export * from './commerce/dodo.js';
 
 export * from './finance/ledger.js';
 export * from './finance/reconciliation.js';

@@ -70,6 +70,16 @@ These are unit/integration tests against code and a real Postgres — they do no
 | Toolchain: clean build + lint | **DONE** | `pnpm clean && pnpm build` green from a clean state — a stale `.tsbuildinfo` previously produced a confident false failure (and can equally false-pass); `pnpm lint` (CommonJS flat config) exits 0 with 2 known dead-import warnings; `pnpm test` 617 passed / 13 skipped. |
 | GitHub Actions CI | **PARTIAL** | `.github/workflows/ci.yml` exists (Node 22, corepack, frozen lockfile, clean build, Postgres service, test, lint). The same three steps passed locally. A GitHub-hosted run has not executed yet. |
 | Operator console (`apps/site/console.html`) | **PARTIAL** | 17 structural tests pass (`apps/site/test/console.test.ts`): every `$('id')` resolves, every API path it calls is registered by a route file, the phase rail matches `LOOP_PHASE_ORDER`, the token never reaches `localStorage`, and no reassurance is emitted for an unread value. Rendering was verified against a **local mock**, not a live API — see below. |
+| Dodo digital MoR (local) | **DONE** (unit) | `assertPaymentRoute` throws for physical goods; digital checkout/webhook/refund state machine with Standard Webhooks fixtures; GET /products HTTP 401 is `succeeded=false`; refund ledger keyed `refund:${orderId}:${amount}` and stored under `re_*`, not the payment id. Live probe still **HTTP 401** — not `live_verified`. Splices for Stripe-owned collect/checkout/refunds: `PATCH.md`. |
+
+---
+
+### Dodo Payments — local vs live
+
+- **Live prize method:** **NOT COMPLETE**. `GET /products` is **HTTP 401**. That is a credential blocker. It is not a probe pass, not `live_verified`, and must not be treated as Stripe test-mode evidence.
+- **Physical goods:** refused. `assertPaymentRoute('physical_good', 'dodo_merchant_of_record')` throws `ConflictError` naming tax / MoR liability. Dodo is not Merchant of Record for a private-label bottle.
+- **Digital rail (code):** eligible digital add-on / membership / data product / subscription can be checked out, refunded, and ledger-keyed on this branch. Webhook verify uses raw body; missing `DODO_WEBHOOK_SECRET` is the 503 path; bad signature is the 400 path; Dodo has no Idempotency-Key header.
+- **Not wired in Stripe-owned files:** `collect.ts`, physical `/api/checkout`, `refunds.ts`. See `PATCH.md`.
 
 ---
 

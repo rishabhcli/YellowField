@@ -21,6 +21,12 @@ Company `co_01M03F7RQW2M6540BY2GZHCFBW`: Workflows `tickCompanyLoop` **COMPLETED
 
 ---
 
+### Dodo (this branch)
+
+The **HTTP 401** row above is unchanged. Local tests cover physical-route refusal, signed digital webhook state, 401-not-success, and refund ledger by `re_*`. That does not make Dodo `live_verified`. See `PATCH.md` for Stripe-owned collect/checkout/refund splices.
+
+---
+
 ## Machine-unblocked vs still blocked
 
 | Item | Status |

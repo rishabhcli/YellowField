@@ -48,6 +48,9 @@ Last updated: 2026-08-15. Secrets in this file: **none**.
 | Discover / `research.web_search` | 2026-08-15: `BRAVE_SEARCH_API_KEY` present, `GET /res/v1/web/search` → **HTTP 200** with real web results; key pushed to `foundry-worker` + `foundry-api` (Render API, HTTP 200 each). **Not `live_verified`** — a hand-run curl is not `apps/verifier` writing an `integration_verifications` row. Loop **not DONE**. |
 | Anthropic | `ANTHROPIC_API_KEY` missing. |
 
+Dodo unit tests on this branch do not change the **HTTP 401** row. A fixture-signed digital path is not a live checkout. Physical goods stay refused.
+
+
 ---
 
 ## Infra (not a prize-method pass by itself)

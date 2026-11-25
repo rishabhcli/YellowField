@@ -204,6 +204,9 @@ export class WebhookProcessorService {
         return mapStripeEventToOrderTransition(eventType, dataObject);
       }
       case 'dodo':
+        // Refund ledger aliases (`refund` = `refund_id` / `re_*`) are applied
+        // in mapDodoEventToOrderTransition. Do not copy payment_id onto the
+        // refund key. Persist/reconcile splices: PATCH.md (DodoCommerceService).
         return mapDodoEventToOrderTransition(eventType, payload);
       case 'whop':
         return mapWhopEventToOrderTransition(eventType, payload);
