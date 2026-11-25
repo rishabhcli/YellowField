@@ -110,3 +110,21 @@ These were found by tests failing, not by review:
    what is not really a conflict.
 
 See `VERIFICATION_EVIDENCE.md` and `BLOCKERS.md`.
+
+---
+
+## Terac expert_validate (this pass)
+
+Unit-tested path only. **Not** `live_verified`. Org credit remains **$0**; an unfunded draft is not panel results. `TERAC_STUDY_BLOCKER` is unchanged.
+
+| Step | Status | Evidence |
+|---|---|---|
+| Feasibility request → poll until `RESPONDED` (or blocked) | **DONE** (unit) | `packages/services/test/expert-review.test.ts`: `RECEIVED` stays `pricing_pending` and does not launch; missing `TERAC_API_KEY` returns `blockedOn`, never throws. |
+| Launch only when funded | **DONE** (unit) | `$0` `ValidationError` (`teracLaunchBlocked`) → review status `priced` + `blockedOn`. `toExpertReview` maps opportunity `draft` to `priced`, not `launched`. |
+| `POST /webhooks/terac` HMAC + dedupe | **DONE** (unit) | `apps/api/test/terac-webhook.test.ts`: 503 if secret missing, 400 on bad sig, 200 `{duplicate:true}` on redelivery. HMAC is timestamp concatenated with raw body (no separator). |
+| Submissions → `ExpertReview` only when complete | **DONE** (unit) | `toExpertReview` throws without critique / expert id / timestamp. Service `poll` / `ingestWebhook` skip incomplete rows rather than fabricating them. |
+| `summariseReview` reject-one → `rejected` | **DONE** (unit) | Existing core test plus `expert-review.test.ts` poll/ingest: a single approved reject sets verdict `rejected`. |
+| `assessForLoop` re-derives from the artefact | **DONE** (unit) | Completed reject artefact → `verdict: 'rejected'` (not an invented pass). Priced/$0 review → phase incomplete + `blockedOn`. Loop `#assessExpertValidate` splice is in `PATCH.md`. |
+| Tools `expert.request_review` / `expert.poll` | **PARTIAL** | `expert.request_review` is already in the catalog (PolicyGate `expert.engage_paid`). `expert.poll` tool + webhook-processor + handler `expertJobOutcome` splice: `PATCH.md`. |
+
+Prize method `terac_launch_draft_opportunity` / REST launch: **NOT COMPLETE** (live `$0` credit). Do not treat `GET /projects` as a pass.

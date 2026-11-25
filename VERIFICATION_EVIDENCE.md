@@ -82,6 +82,23 @@ Terac launch, Linq Agent Pay, Pioneer inference, and Replay QA are unchanged —
 
 ---
 
+## Terac expert_validate (this pass)
+
+Not a prize-method pass. Tests below are local/unit. They do not write `integration_verifications`.
+
+| Claim | Evidence | Not evidence |
+|---|---|---|
+| HMAC over `timestamp + rawBody`, 400 / 503 / 200 duplicate | `apps/api/test/terac-webhook.test.ts` (2026-08-15, vitest) | A live Terac delivery against `foundry-api` |
+| `$0` launch stays blocked; unfunded draft ≠ launched | `packages/services/test/expert-review.test.ts` + `toExpertReview` draft → `priced` | `GET /projects` probe |
+| Reject-one → `rejected` | `summariseReview` unit test + poll/ingest in `expert-review.test.ts` | An invented verdict or empty panel |
+| Missing capability → blocked, not thrown | `requestReview` / `poll` / `expertJobOutcome` in `expert-review.test.ts`; worker `tolerateMissingCapability` still wraps throws | Retrying `expert.poll` until a key appears |
+| Webhook ingest refreshes then records only complete submissions | `ingestWebhook` unit test; incomplete critique is skipped | Trusting the webhook body as the submission |
+| `assessForLoop` re-derives from the artefact | Completed reject → `verdict: 'rejected'`; priced/$0 → incomplete + `blockedOn` | In-memory loop state; current `#assessExpertValidate` until `PATCH.md` is applied |
+
+Live blocker (unchanged): org credit **$0** — `TERAC_STUDY_BLOCKER`. Do not mark Terac `live_verified` until `apps/verifier` writes the row after a real funded launch.
+
+---
+
 ## Historical verifier `probe()` rows (not prize-method `live_verified`)
 
 A verifier run on 2026-08-15T18:40:37Z wrote 24 `integration_verifications` rows against hosted Postgres. Those rows record **adapter.probe()** outcomes. They must not be counted as prize-method `live_verified`.

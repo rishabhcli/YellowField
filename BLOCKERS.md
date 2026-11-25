@@ -45,3 +45,17 @@ Company `co_01M03F7RQW2M6540BY2GZHCFBW`: Workflows `tickCompanyLoop` **COMPLETED
 ## Dashboard leftover
 
 Copy gitignored `.env` names into Render env for `foundry-api` / `foundry-worker` when adding new secrets. `BRAVE_SEARCH_API_KEY` **is** present locally and has now been pushed to both services via the Render API. Reddit and **Anthropic** remain absent — Anthropic is the single key still gating the loop. Do not commit `.env` or `hackathon-sponsor-credentials.md`.
+
+---
+
+## Terac expert_validate (this pass)
+
+Live launch is still blocked. Unit path is ready; splices in `PATCH.md` are not applied.
+
+| Item | Status |
+|---|---|
+| Org credit | **$0**. Exact live refusal remains `TERAC_STUDY_BLOCKER` (`Required: $200.00, Available: $0.00`). Billing: https://terac.com/rishabh-bansal/settings/finance (members without billing access get 404). |
+| `live_verified` | **No.** `apps/verifier` has not written a launch row after a real funded launch. `GET /projects` is a probe, not a pass. |
+| Unfunded draft | Must not be treated as panel results. Service keeps status `priced` and returns `blockedOn`. |
+| Webhook secret | `TERAC_WEBHOOK_SECRET` still required for `POST /webhooks/terac`. Missing secret → **503** (provider retries). Route exists; processor ingest splice is in `PATCH.md`. |
+| Loop assessment | `ExpertReviewService.assessForLoop` re-derives from the review artefact. `LoopOrchestrator.#assessExpertValidate` still skips when the capability is unusable — splice in `PATCH.md`. |
